@@ -271,7 +271,7 @@ sub qesap_create_aws_credentials {
     qesap_get_file_paths() unless defined $paths{qesap_conf_trgt};
     my $credfile = script_output q|awk -F\" '/aws_credentials/ {print $2}' | . $paths{qesap_conf_trgt};
     save_tmp_file('credentials', join(' ', "[default]\naws_access_key_id", '=', $key,
-                                      "\naws_secret_access_key", '=', $secret, "\n"));
+            "\naws_secret_access_key", '=', $secret, "\n"));
     assert_script_run 'curl ' . autoinst_url . "/files/credentials -o $credfile";
 }
 
