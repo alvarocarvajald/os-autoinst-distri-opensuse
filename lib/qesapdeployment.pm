@@ -34,7 +34,7 @@ use testapi;
 use Exporter 'import';
 use Data::Dumper;
 
-
+my %paths = ();
 my @log_files = ();
 
 # Terraform requirement
@@ -51,6 +51,7 @@ our @EXPORT = qw(
   qesap_prepare_env
   qesap_execute
   qesap_yaml_replace
+  qesap_create_aws_credentials
 );
 
 =head1 DESCRIPTION
@@ -65,7 +66,6 @@ our @EXPORT = qw(
 =cut
 
 sub qesap_get_file_paths {
-    my %paths;
     $paths{qesap_conf_filename} = get_required_var('QESAP_CONFIG_FILE');
     $paths{deployment_dir} = get_var('DEPLOYMENT_DIR', '/root/qe-sap-deployment');
     $paths{terraform_dir} = get_var('PUBLIC_CLOUD_TERRAFORM_DIR', $paths{deployment_dir} . '/terraform/');
@@ -79,7 +79,7 @@ sub qesap_get_file_paths {
 =cut
 
 sub qesap_create_folder_tree {
-    my %paths = qesap_get_file_paths();
+    qesap_get_file_paths() unless defined $paths{deployment_dir};
     assert_script_run("mkdir -p $paths{deployment_dir}", quiet => 1);
 }
 
@@ -93,7 +93,7 @@ sub qesap_pip_install {
     enter_cmd 'pip config --site set global.progress_bar off';
     my $pip_ints_cmd = 'pip install --no-color --no-cache-dir ';
     my $pip_install_log = '/tmp/pip_install.txt';
-    my %paths = qesap_get_file_paths();
+    qesap_get_file_paths() unless defined $paths{deployment_dir};
 
     # Hack to fix an installation conflict. Someone install PyYAML 6.0 and awscli needs an older one
     push(@log_files, $pip_install_log);
@@ -130,7 +130,7 @@ sub qesap_upload_logs {
 sub qesap_get_deployment_code {
     my $git_repo = get_var(QESAPDEPLOY_GITHUB_REPO => 'github.com/SUSE/qe-sap-deployment');
     my $qesap_git_clone_log = '/tmp/git_clone.txt';
-    my %paths = qesap_get_file_paths();
+    qesap_get_file_paths() unless (defined $paths{deployment_dir} && defined $paths{terraform_dir});
 
     record_info("QESAP repo", "Preparing qe-sap-deployment repository");
     qesap_create_folder_tree();
@@ -176,7 +176,7 @@ sub qesap_yaml_replace {
     my (%args) = @_;
     my $variables = $args{openqa_variables};
     my %replaced_variables = ();
-    my %paths = qesap_get_file_paths();
+    qesap_get_file_paths() unless defined $paths{qesap_conf_trgt};
     push(@log_files, $paths{qesap_conf_trgt});
 
     for my $variable (keys %{$variables}) {
@@ -200,7 +200,7 @@ sub qesap_execute {
     die 'QESAP command to execute undefined' unless $args{cmd};
 
     my $verbose = $args{verbose} ? "--verbose" : "";
-    my %paths = qesap_get_file_paths();
+    qesap_get_file_paths() unless (defined $paths{deployment_dir} && defined $paths{qesap_conf_trgt});
     my $qesap_cmd = join(" ", $paths{deployment_dir} . "/scripts/qesap/qesap.py", $verbose, "-c", $paths{qesap_conf_trgt}, "-b", $paths{deployment_dir});
     my $exec_log = "/tmp/qesap_exec_" . $args{cmd} . ".log.txt";
     push(@log_files, $exec_log);
@@ -236,7 +236,7 @@ sub qesap_prepare_env {
     my (%args) = @_;
     my $variables = $args{openqa_variables};
     my $provider = lc get_required_var('PUBLIC_CLOUD_PROVIDER');
-    my %paths = qesap_get_file_paths();
+    qesap_get_file_paths() unless (defined $paths{qesap_conf_filename} && defined $paths{qesap_conf_trgt} && defined $paths{terraform_dir});
     my $tfvars_template = get_var('QESAP_TFVARS_TEMPLATE');
     my $qesap_conf_src = "sles4sap/qe_sap_deployment/" . $paths{qesap_conf_filename};
     my $curl = "curl -v -L ";
@@ -259,6 +259,20 @@ sub qesap_prepare_env {
     qesap_execute(cmd => 'configure', verbose => 1);
     push(@log_files, $paths{terraform_dir} . $provider . "/terraform.tfvars");
     qesap_upload_logs();
+}
+
+=head3 qesap_create_aws_credentials
+
+    Creates a AWS credentials file as required by QE-SAP Terraform deployment code.
+=cut
+
+sub qesap_create_aws_credentials {
+    my ($key, $secret) = @_;
+    qesap_get_file_paths() unless defined $paths{qesap_conf_trgt};
+    my $credfile = script_output q|awk -F\" '/aws_credentials/ {print $2}' | . $paths{qesap_conf_trgt};
+    save_tmp_file('credentials', join(' ', "[default]\naws_access_key_id", '=', $key,
+                                      "\naws_secret_access_key", '=', $secret, "\n"));
+    assert_script_run 'curl ' . autoinst_url . "/files/credentials -o $credfile";
 }
 
 1;

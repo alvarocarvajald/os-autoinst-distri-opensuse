@@ -1,0 +1,22 @@
+---
+name: qam test plan C
+description: |
+  Run HANASR tests on public cloud instances using ha-sap-terraform-deployments tool:
+    - TODO: write a proper description
+    - deploy
+    - test
+    - destroy
+vars:
+  PUBLIC_CLOUD_RESOURCE_GROUP: 'hanasr'
+  TEST_CONTEXT: 'OpenQA::Test::RunArgs'
+schedule:
+  - boot/boot_to_desktop
+  - publiccloud/download_repos
+  - sles4sap/publiccloud/hana_sr_deployment
+  - sles4sap/publiccloud/check_package
+  - publiccloud/registration
+  - publiccloud/transfer_repos
+  - publiccloud/patch_and_reboot
+  - sles4sap/publiccloud/check_package
+    # ssh_interactive_end is scheduled to cleanup the IaaS
+  - publiccloud/ssh_interactive_end

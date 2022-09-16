@@ -9,12 +9,12 @@ terraform:
     private_key: "~/.ssh/id_rsa"
     aws_credentials: "/root/amazon_credentials"
     os_image: "%SLE_IMAGE%"
-    os_owner: "self"
+    os_owner: "%IMAGE_OWNER%"
 
     # HANA
-    hana_ips: ["10.10.1.11", "10.10.1.12"]
+    hana_ips: ["10.0.1.11", "10.0.2.12"]
     hana_cluster_fencing_mechanism: "%FENCING_MECHANISM%"
-    hana_cluster_vip: "10.10.1.15"
+    hana_cluster_vip: "10.0.0.15"
     hana_instancetype: "%MACHINE_TYPE%"
 
 ansible:

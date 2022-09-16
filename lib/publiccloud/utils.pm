@@ -91,6 +91,7 @@ sub deregister_addon {
 sub registercloudguest {
     my ($instance) = @_;
     my $regcode = get_required_var('SCC_REGCODE');
+    $regcode = get_required_var('SCC_REGCODE_SLES4SAP') if (get_var('PUBLIC_CLOUD_SLES4SAP'));
     my $remote = $instance->username . '@' . $instance->public_ip;
     # not all images currently have registercloudguest pre-installed .
     # in such a case,we need to regsiter against SCC and install registercloudguest with all needed dependencies and then

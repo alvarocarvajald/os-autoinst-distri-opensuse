@@ -24,12 +24,26 @@ sub run {
 
     # Preserve args for post_fail_hook
     $self->{provider} = $args->{my_provider};    # required for cleanup
-    $self->{instance} = $args->{my_instance};
+    my @instances = ();
 
-    select_host_console();    # select console on the host, not the PC instance
+    if ($args->{my_instance}) {
+        push @instances, $args->{my_instance};
+    }
+    elsif ($args->{instances}) {
+        @instances = @{$args->{instances}};
+    }
+    else {
+        die 'No instance or list of instances received in %$args';
+    }
 
-    registercloudguest($args->{my_instance});
-    register_addons_in_pc($args->{my_instance});
+    foreach my $instance (@instances) {
+        $self->{instance} = $instance;
+
+        select_host_console();    # select console on the host, not the PC instance
+
+        registercloudguest($instance);
+        register_addons_in_pc($instance);
+    }
 }
 
 sub post_fail_hook {
