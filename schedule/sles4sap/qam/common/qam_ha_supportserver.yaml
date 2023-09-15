@@ -28,5 +28,3 @@ vars:
 schedule:
   - support_server/login
   - support_server/setup
-  - ha/barrier_init
-  - support_server/wait_children
