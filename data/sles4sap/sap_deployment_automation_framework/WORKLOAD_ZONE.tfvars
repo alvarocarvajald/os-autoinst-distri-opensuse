@@ -99,7 +99,7 @@ nat_gateway_name   = "%SDAF_ENV_CODE%-%SDAF_REGION_CODE%-%SDAF_VNET_CODE%-NG_000
 # nat_gateway_idle_timeout_in_minutes = 10
 nat_gateway_public_ip_tags = {
   "ipTagType": "FirstPartyUsage",
-  "tag": "OpenQA-SDAF-automation"
+  "tag": "/NonProd"
 }
 
 
