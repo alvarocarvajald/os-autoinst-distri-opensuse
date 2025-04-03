@@ -7,6 +7,7 @@ use Test::Mock::Time;
 use hacluster;
 use testapi;
 use Scalar::Util qw(looks_like_number);
+use List::Util qw(any);
 
 my %sbd_delay_params = (
     'sbd_delay_start' => 'yes',
@@ -268,6 +269,38 @@ subtest '[show_cluster_parameter]' => sub {
     ok((grep /resource param Hogwarts/, @calls), 'Call "resource" option');
     ok((grep /show/, @calls), 'Specify "show" action');
     ok((grep /RoomOfRequirement/, @calls), 'Specify parameter name');
+};
+
+subtest '[check_cluster_state]' => sub {
+    my $hacluster = Test::MockModule->new('hacluster', no_auto => 1);
+    my @calls;
+    $hacluster->redefine(script_run => sub { push @calls, $_[0]; });
+    $hacluster->redefine(assert_script_run => sub { push @calls, $_[0]; });
+    $hacluster->redefine(check_online_nodes => sub { push @calls, 'check_online_nodes'; });
+
+    check_cluster_state();
+    note("\n  -->  " . join("\n  -->  ", @calls));
+
+    ok((any { /crm_mon/ } @calls), 'At least one crm_mon call found');
+    ok((any { /check_online_nodes/ } @calls), 'check_online_nodes called');
+
+    # Reset @calls for next test
+    @calls = ();
+    set_var('HDDVERSION', 'Some Version');
+
+    check_cluster_state();
+    note("\n  -->  " . join("\n  -->  ", @calls));
+
+    ok((any { /crm_verify/ } @calls), 'At least one crm_verify call found');
+
+    # Reset @calls and HDDVERSION for next test
+    @calls = ();
+    set_var('HDDVERSION', undef);
+
+    check_cluster_state(proceed_on_failure => 1);
+    note("\n  -->  " . join("\n  -->  ", @calls));
+
+    ok((any { /crm_mon/ } @calls), 'At least one crm_mon call found');
 };
 
 done_testing;
