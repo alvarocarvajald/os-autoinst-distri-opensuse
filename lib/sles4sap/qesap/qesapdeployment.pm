@@ -1404,6 +1404,10 @@ sub qesap_cluster_log_cmds {
             Cmd => 'cat /var/tmp/hdbinst.log',
             Output => 'hdbinst.log.txt',
         },
+	{
+	    Cmd => 'cat /var/tmp/hdb_*/hdbinst_configure.log',
+	    Output => 'hdbinst_configure.log',
+        },
         {
             Cmd => 'cat /var/tmp/hdblcm.log',
             Output => 'hdblcm.log.txt',
