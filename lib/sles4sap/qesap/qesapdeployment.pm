@@ -1405,8 +1405,8 @@ sub qesap_cluster_log_cmds {
             Output => 'hdbinst.log.txt',
         },
 	{
-	    Cmd => 'cat /var/tmp/hdb_*/hdbinst_configure.log',
-	    Output => 'hdbinst_configure.log',
+	    Cmd => 'tar -zcf - /var/tmp/hdb_*',
+	    Output => 'hdb_hdblcm_install.tar.gz',
         },
         {
             Cmd => 'cat /var/tmp/hdblcm.log',
