@@ -75,6 +75,9 @@ def run(self):
         # are different. How reinstallation is performed, depends on the
         # backend. Below is code for qemu and svirt/s390x where this was tested
         if (check_var("BACKEND", "qemu")):
+            if (check_var("ARCH", "ppc64le")):
+                assert_script_run("lsblk")
+                assert_script_run("df -h")
             # On qemu, reboot the SUT to re-install. As next module expects the
             # SUT to be in a grub menu, assert the grub screen here first,
             # and move the highlighted option down and up to disable the
