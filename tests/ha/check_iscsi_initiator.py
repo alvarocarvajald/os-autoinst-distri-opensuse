@@ -11,6 +11,7 @@ from mmapi import get_current_job_id
 
 perl.require("serial_terminal")
 perl.require("power_action_utils")
+perl.require("version_utils")
 
 def run(self):
     """
@@ -75,14 +76,20 @@ def run(self):
         # are different. How reinstallation is performed, depends on the
         # backend. Below is code for qemu and svirt/s390x where this was tested
         if (check_var("BACKEND", "qemu")):
-            if (check_var("ARCH", "ppc64le")):
-                assert_script_run("lsblk")
-                assert_script_run("df -h")
+            # qemu on ppc64le does not behave exactly the same as in other architectures
+            # In 16.1 in particular, if using BOOTFROM=d, job will try to boot from the
+            # ISO always and won't see the installed system, while if using BOOTFROM=c
+            # the opposite happens and job will always boot from the system which prevents
+            # the job from performing the second installation. As a workaround, only on
+            # BACKEND=qemu and ARCH=ppc64le and VERSION>=16.1, this wipes the installed
+            # OS to force the following modules to perform a second installation.
+            # WARNING: if using this module right before a module that expects an installed
+            # SUT, then it will be destroyed and test will fail.
+            if (check_var("ARCH", "ppc64le") and perl.version_utils.is_sle(">=16.1")):
                 lsblk_opt = get_var("HDDMODEL", "virtio-blk")[0]
                 if (lsblk_opt == "s"):
                     lsblk_opt = lsblk_opt.upper()
-                assert_script_run(f"lsblk -{lsblk_opt} -o NAME")
-                #assert_script_run(f"dd if=/dev/zero of=\"/dev/$(lsblk -{lsblk_opt} -o NAME | awk '$1 != \"NAME\" {print $0}')\" count=10000 bs=512")
+                assert_script_run(f"dd if=/dev/zero of=\"/dev/$(lsblk -{lsblk_opt} -o NAME | awk '$1 != \"NAME\" {print $0}')\" count=10000 bs=512")
             # On qemu, reboot the SUT to re-install. As next module expects the
             # SUT to be in a grub menu, assert the grub screen here first,
             # and move the highlighted option down and up to disable the
