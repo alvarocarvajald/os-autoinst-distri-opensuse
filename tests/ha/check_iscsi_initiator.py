@@ -78,6 +78,11 @@ def run(self):
             if (check_var("ARCH", "ppc64le")):
                 assert_script_run("lsblk")
                 assert_script_run("df -h")
+                lsblk_opt = get_var("HDDMODEL", "virtio-blk")[0]
+                if (lsblk_opt == "s"):
+                    lsblk_opt = lsblk_opt.upper()
+                assert_script_run(f"lsblk -{lsblk_opt} -o NAME")
+                #assert_script_run(f"dd if=/dev/zero of=\"/dev/$(lsblk -{lsblk_opt} -o NAME | awk '$1 != \"NAME\" {print $0}')\" count=10000 bs=512")
             # On qemu, reboot the SUT to re-install. As next module expects the
             # SUT to be in a grub menu, assert the grub screen here first,
             # and move the highlighted option down and up to disable the
