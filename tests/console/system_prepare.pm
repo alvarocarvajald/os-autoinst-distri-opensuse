@@ -87,6 +87,15 @@ sub run {
         process_reboot(trigger => 1);
     }
 
+    if (get_var('EXTRABOOTPARAMS')) {
+        change_grub_config('"$', ' ' . get_var('EXTRABOOTPARAMS') . '"', 'GRUB_CMDLINE_LINUX_DEFAULT=');
+        grub_mkconfig;
+        process_reboot(trigger => 1);
+        reset_consoles;
+        select_console 'root-console';
+        script_run 'cat /proc/cmdline';
+    }
+
     # Save output info to logfile
     if (is_sle && get_required_var('FLAVOR') =~ /Migration/) {
         my $out;
